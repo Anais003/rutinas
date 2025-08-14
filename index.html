@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rutina de Mañana y Noche</title>
+  <meta name="theme-color" content="#111827" />
+  <style>
+    :root {
+      --bg: #0f172a; /* slate-900 */
+      --panel: #111827; /* gray-900 */
+      --muted: #94a3b8; /* slate-400 */
+      --text: #f8fafc; /* slate-50 */
+      --accent: #22c55e; /* green-500 */
+      --accent-2: #60a5fa; /* blue-400 */
+      --danger: #ef4444; /* red-500 */
+      --ring: rgba(96, 165, 250, 0.4);
+    }
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica,Arial; background:linear-gradient(180deg,#0b1220,#111827 30%,#0b1220 100%); color:var(--text);}
+
+    .wrap{max-width:880px;margin:0 auto;padding:16px;}
+    header{display:flex;align-items:center;gap:12px;justify-content:space-between;margin:6px 0 14px}
+    .title{font-weight:700;letter-spacing:.3px}
+    .subtitle{color:var(--muted);font-size:14px}
+
+    .tabs{display:flex;gap:8px;margin:8px 0 16px}
+    .tab{flex:1;text-align:center;border:1px solid #1f2937;background:#0b1220;color:var(--muted);padding:10px 12px;border-radius:14px;cursor:pointer;user-select:none}
+    .tab[aria-selected="true"]{background:linear-gradient(180deg,#1f2937,#0b1220); color:#e2e8f0; border-color:#374151; box-shadow:0 0 0 2px #0b1220, 0 0 0 4px var(--ring) inset}
+
+    .panel{display:none;border:1px solid #1f2937;background:rgba(17,24,39,.7);backdrop-filter:saturate(120%) blur(6px);border-radius:18px;padding:14px}
+    .panel.active{display:block}
+
+    .new{display:flex;gap:8px;margin:4px 0 12px}
+    .input{flex:1;border:1px solid #374151;background:#0b1220;color:#e5e7eb;border-radius:12px;padding:12px 14px;outline:none}
+    .input:focus{box-shadow:0 0 0 3px var(--ring)}
+    .btn{border:1px solid #1f2937;background:#0b1220;color:#e5e7eb;border-radius:12px;padding:12px 14px;cursor:pointer}
+    .btn:hover{filter:brightness(1.1)}
+
+    .controls{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+    .btn.small{padding:8px 10px;border-radius:10px;font-size:14px}
+    .btn.danger{border-color:#7f1d1d;color:#fecaca}
+
+    ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+    li{
+      display:grid;grid-template-columns:28px 1fr 36px;gap:8px;align-items:center;
+      border:1px solid #1f2937;background:linear-gradient(180deg,#0b1220,#0a0f1a);border-radius:14px; padding:8px 8px 8px 6px
+    }
+    .chk{width:20px;height:20px}
+    .text[contenteditable]{outline:none;border-radius:8px;padding:8px}
+    .text[contenteditable]:focus{box-shadow:0 0 0 3px var(--ring)}
+    .drag{cursor:grab;touch-action:none;opacity:.85}
+    .drag:active{cursor:grabbing}
+    .del{background:transparent;border:0;color:#fecaca;font-size:20px}
+    .muted{color:var(--muted);font-size:13px}
+
+    footer{margin:18px 0 8px; color:var(--muted);font-size:12px; text-align:center}
+
+    @media (min-width:700px){
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+      .panel{height:calc(100% - 100px)}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="title">Rutina de Mañana y Noche</div>
+        <div class="subtitle">Checklists simples, editables y que se guardan solas en tu teléfono.</div>
+      </div>
+      <button class="btn small" id="exportBtn" title="Exportar/respaldar">Exportar</button>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="Secciones de rutina">
+      <button class="tab" role="tab" aria-selected="true" aria-controls="panel-noche" id="tab-noche">Rutina de noche</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="panel-maniana" id="tab-maniana">Rutina de mañana</button>
+    </nav>
+
+    <div class="grid">
+      <!-- Panel Noche -->
+      <section id="panel-noche" class="panel active" role="tabpanel" aria-labelledby="tab-noche">
+        <form class="new" data-list="noche" autocomplete="off">
+          <input class="input" name="texto" required placeholder="Agregar paso (ej. Preparar mochila)" />
+          <button class="btn" type="submit">Añadir</button>
+        </form>
+        <div class="controls">
+          <button class="btn small" data-action="clear-done" data-list="noche">Limpiar completados</button>
+          <span class="muted" id="count-noche"></span>
+        </div>
+        <ul id="lista-noche"></ul>
+      </section>
+
+      <!-- Panel Mañana -->
+      <section id="panel-maniana" class="panel" role="tabpanel" aria-labelledby="tab-maniana">
+        <form class="new" data-list="maniana" autocomplete="off">
+          <input class="input" name="texto" required placeholder="Agregar paso (ej. Revisar agenda)" />
+          <button class="btn" type="submit">Añadir</button>
+        </form>
+        <div class="controls">
+          <button class="btn small" data-action="clear-done" data-list="maniana">Limpiar completados</button>
+          <span class="muted" id="count-maniana"></span>
+        </div>
+        <ul id="lista-maniana"></ul>
+      </section>
+    </div>
+
+    <footer>
+      Consejito: mantén cada paso corto y accionable. Todo se guarda automáticamente (localStorage).
+    </footer>
+  </div>
+
+  <script>
+    // ---- Estado ----
+    const KEY = {
+      noche: 'rutina-noche-v1',
+      maniana: 'rutina-maniana-v1'
+    };
+
+    const estado = {
+      noche: cargar('noche') || [
+        {id: uid(), txt: 'Preparar mochila', done:false},
+        {id: uid(), txt: 'Dejar ropa lista', done:false},
+        {id: uid(), txt: 'Revisar agenda y tareas', done:false}
+      ],
+      maniana: cargar('maniana') || [
+        {id: uid(), txt: 'Revisión rápida de agenda', done:false},
+        {id: uid(), txt: 'Chequeo de mochila', done:false}
+      ]
+    };
+
+    // ---- Utilidades ----
+    function uid(){return Math.random().toString(36).slice(2,9)}
+    function guardar(nombre){ localStorage.setItem(KEY[nombre], JSON.stringify(estado[nombre])); actualizarContador(nombre); }
+    function cargar(nombre){ try{ return JSON.parse(localStorage.getItem(KEY[nombre])) }catch{ return null } }
+
+    // ---- Render ----
+    const ulNoche = document.getElementById('lista-noche');
+    const ulManiana = document.getElementById('lista-maniana');
+
+    function render(nombre){
+      const ul = nombre==='noche'? ulNoche : ulManiana;
+      ul.innerHTML = '';
+      estado[nombre].forEach(item => ul.appendChild(renderItem(nombre,item)));
+      actualizarContador(nombre);
+    }
+
+    function renderItem(nombre, item){
+      const li = document.createElement('li');
+      li.draggable = true;
+      li.dataset.id = item.id;
+
+      // checkbox
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.className='chk'; cb.checked = !!item.done;
+      cb.addEventListener('change', ()=>{ item.done = cb.checked; guardar(nombre); });
+
+      // texto editable
+      const span = document.createElement('span');
+      span.className='text';
+      span.textContent = item.txt;
+      span.contentEditable = true;
+      span.spellcheck = false;
+      span.addEventListener('blur', ()=>{ item.txt = span.textContent.trim()||'—'; guardar(nombre); });
+      span.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter'){ e.preventDefault(); span.blur(); }
+      });
+
+      // eliminar
+      const del = document.createElement('button');
+      del.className='del'; del.title='Eliminar'; del.innerHTML='×';
+      del.addEventListener('click', ()=>{
+        estado[nombre] = estado[nombre].filter(x=>x.id!==item.id);
+        guardar(nombre); render(nombre);
+      });
+
+      // drag handle (whole item)
+      li.addEventListener('dragstart', (e)=>{
+        e.dataTransfer.setData('text/plain', item.id);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      li.addEventListener('dragover', (e)=>{ e.preventDefault(); });
+      li.addEventListener('drop', (e)=>{
+        e.preventDefault();
+        const fromId = e.dataTransfer.getData('text/plain');
+        const toId = item.id;
+        if(fromId===toId) return;
+        const arr = estado[nombre];
+        const from = arr.findIndex(x=>x.id===fromId);
+        const to = arr.findIndex(x=>x.id===toId);
+        const [moved] = arr.splice(from,1);
+        arr.splice(to,0,moved);
+        guardar(nombre); render(nombre);
+      });
+
+      li.append(cb, span, del);
+      return li;
+    }
+
+    function actualizarContador(nombre){
+      const c = estado[nombre].filter(x=>!x.done).length;
+      const el = document.getElementById('count-'+nombre);
+      el.textContent = c===0 ? 'Todo listo ✨' : `${c} pendiente(s)`;
+    }
+
+    // ---- Añadir nuevos ----
+    document.querySelectorAll('form.new').forEach(form=>{
+      form.addEventListener('submit', (e)=>{
+        e.preventDefault();
+        const nombre = form.dataset.list;
+        const input = form.querySelector('input[name="texto"]');
+        const txt = input.value.trim();
+        if(!txt) return;
+        estado[nombre].push({id: uid(), txt, done:false});
+        guardar(nombre); render(nombre);
+        input.value=''; input.focus();
+      })
+    });
+
+    // ---- Limpiar completados ----
+    document.querySelectorAll('[data-action="clear-done"]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const nombre = btn.dataset.list;
+        estado[nombre] = estado[nombre].filter(x=>!x.done);
+        guardar(nombre); render(nombre);
+      })
+    });
+
+    // ---- Pestañas (tabs) ----
+    const tabs = document.querySelectorAll('.tab');
+    const panels = {
+      noche: document.getElementById('panel-noche'),
+      maniana: document.getElementById('panel-maniana')
+    };
+    function activar(nombre){
+      tabs.forEach(t=>t.setAttribute('aria-selected','false'));
+      document.getElementById('tab-'+nombre).setAttribute('aria-selected','true');
+      Object.values(panels).forEach(p=>p.classList.remove('active'));
+      panels[nombre].classList.add('active');
+    }
+    document.getElementById('tab-noche').addEventListener('click', ()=>activar('noche'));
+    document.getElementById('tab-maniana').addEventListener('click', ()=>activar('maniana'));
+
+    // ---- Exportar/Respaldar ----
+    document.getElementById('exportBtn').addEventListener('click', ()=>{
+      const data = {
+        noche: estado.noche,
+        maniana: estado.maniana,
+        exportado: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'rutina-backup.json';
+      a.click(); setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    });
+
+    // ---- Render inicial ----
+    render('noche');
+    render('maniana');
+  </script>
+</body>
+</html>
